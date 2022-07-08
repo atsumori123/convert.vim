@@ -1,3 +1,6 @@
+let s:save_cpo = &cpoptions
+set cpoptions&vim
+
 "-------------------------------------------------------
 " Encord Proc
 "-------------------------------------------------------
@@ -209,7 +212,7 @@ endfunction
 "* Function	: 
 "* Argument	: none
 "*******************************************************
-function! s:CNV_Start(range, line1, line2) abort
+function! convert#CNV_Start(range, line1, line2) abort
 	if a:range
 		" get select rage
 		let s:range = 1
@@ -271,5 +274,5 @@ function! s:CNV_Start(range, line1, line2) abort
 	endif
 endfunction
 
-command! -nargs=0 -range CNV call s:CNV_Start(<range>, <line1>, <line2>)
-
+let &cpoptions = s:save_cpo
+unlet s:save_cpo
