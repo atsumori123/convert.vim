@@ -260,7 +260,7 @@ endfunction
 "-------------------------------------------------------
 " s:Start_convert()
 "-------------------------------------------------------
-function! convert#Start_convert(range, line1, line2) abort
+function! convert#Start(range, line1, line2) abort
 	echo a:range
 	if a:range
 		" get select rage
