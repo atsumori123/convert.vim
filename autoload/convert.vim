@@ -2,138 +2,12 @@ let s:save_cpo = &cpoptions
 set cpoptions&vim
 
 "-------------------------------------------------------
-" Encord Proc
+" s:Main_menu()
 "-------------------------------------------------------
-function! s:CNV_ReOpentEncord(type) abort
-		execute 'e ++enc='.a:type
-endfunction
-
-function! s:CNV_ConvertEncord(type) abort
-		execute 'set fenc='.a:type
-endfunction
-
-"-------------------------------------------------------
-" NL Proc
-"-------------------------------------------------------
-function! s:CNV_ReOpenNL(type) abort
-		execute 'edit ++fileformat='.a:type
-endfunction
-
-function! s:CNV_ConvertNL(type) abort
-		execute 'set fileformat='.a:type
-endfunction
-
-"*******************************************************
-"* Function name: CNV_MenuFilter()
-"* Functio	: Filtering when popup-menu is selected
-"* Argument	: winid : Winddow ID
-"*			  key	: Pressed key
-"*******************************************************
-function! CNV_MenuFilter(winid, key) abort
-
-	" ---------------------------
-	"  When pressed 'l' key
-	" ---------------------------
-	if a:key == 'l'
-		call win_execute(a:winid, 'let w:lnum = line(".")')
-		let index = getwinvar(a:winid, 'lnum', 0)
-		call popup_close(a:winid, index)
-		return 1
-	endif
-
-	" --------------------------------------
-	"  When pressed shortcut key
-	" --------------------------------------
-	let index = stridx(s:menu_filter, a:key)
-	if index >= 0
-		call popup_close(a:winid, index + 1)
-		return 1
-	endif
-
-	" --------------------------------
-	"  Other, pass to normal filter
-	" --------------------------------
-	return popup_filter_menu(a:winid, a:key)
-endfunction
-
-"-------------------------------------------------------
-" make popup menu and handler for encord proc
-"-------------------------------------------------------
-function! CNV_EncordHandler(winid, result)
-	let enc_tbl = {1:'sjis', 2:'utf-8'}
-	if has_key(enc_tbl, a:result)
-		call s:func(enc_tbl[a:result])
-	endif
-endfunction
-
-function! s:CNV_SelectEncordType() abort
-	let menu = []
-	call add(menu, "s: sjis")
-	call add(menu, "u: utf-8")
-	let s:menu_filter = 'suq'
-
-	call popup_menu(menu, #{
-			\ filter: 'CNV_MenuFilter',
-			\ callback: 'CNV_EncordHandler'
-			\ })
-endfunction
-
-function! s:CNV_InputEncordType() abort
-	echo "\r"
-   	let instr = input('Encording type [sjis/utf-8]: ')
-   	if empty(instr) | return | endif
-   	if instr != "sjis" && instr != "utf-8"
-   		echo "\r"
-   		echohl WarningMsg | echomsg 'Illegal encord type.' | echohl None
-	else
-		call s:func(instr)
-   	endif
-endfunction
-
-"-------------------------------------------------------
-" make popup menu and handler for NL proc
-"-------------------------------------------------------
-function! CNV_NLHandler(winid, result)
-	let nl_tbl = {1:'unix', 2:'dos', 3:'mac'}
-	if has_key(nl_tbl, a:result)
-		call s:func(nl_tbl[a:result])
-	endif
-endfunction
-
-function! s:CNV_SelectNLType() abort
-	let menu = []
-	call add(menu, "u: unix (LF)")
-	call add(menu, "d: dos (CR+LF)")
-	call add(menu, "m: mac (CR)")
-	let s:menu_filter = 'udmq'
-
-	call popup_menu(menu, #{
-			\ filter: 'CNV_MenuFilter',
-			\ callback: 'CNV_NLHandler'
-			\ })
-endfunction
-
-function! s:CNV_InputNLType() abort
-	echo "\r"
-	let instr = input('NL-code [unix(LF)/dos(CR+LF)/mac(CR)]: ')
-   	if empty(instr) | return | endif
-   	if instr != "unix" && instr != "dos" && instr != "mac"
-   		echo "\r"
-   		echohl WarningMsg | echomsg 'Illegal NL-code.' | echohl None
-	else
-		call s:func(instr)
- 	endif
-endfunction
-
-"*******************************************************
-"* Function name: CNV_Handler()
-"* Function	: Handler processing when selected of menu
-"* Argument	: winid : Winddow ID
-"*		  result: Number of selected item
-"*******************************************************
-function! CNV_Handler(winid, result)
-	if a:result == 2
+function! s:Main_menu(n)
+	if a:n == 2
 		"Space --> Tab
+		close
 		let et = substitute(execute("set expandtab?"), '[ \|\n]', "", "ge")
 		execute ':set noexpandtab'
 		if s:range
@@ -143,8 +17,9 @@ function! CNV_Handler(winid, result)
 		endif
 		execute ':set '.et
 
-	elseif a:result == 3
+	elseif a:n == 3
 		"Tab --> Space
+		close
 		let et = substitute(execute("set expandtab?"), '[ \|\n]', "", "ge")
 		execute ':set expandtab'
 		if s:range
@@ -154,65 +29,239 @@ function! CNV_Handler(winid, result)
 		endif
 		execute ':set '.et
 		
-	elseif a:result == 4
+	elseif a:n == 4
 		"Remove spaces and tabs at end of lines
+		close
 		let pos = getpos(".")
 		if s:range
 			silent execute ':'.s:start.','.s:end.'s/\s\+$//eg'
 		else
+			echo "abc"
 			silent execute ':%s/\s\+$//e'
 		endif
 		call setpos('.', pos)
 
-	elseif a:result == 6
+	elseif a:n == 6
 		"Reopen with specified encording
-		let s:func = function("s:CNV_ReOpentEncord")
-		if s:enable_popup
-			call s:CNV_SelectEncordType()
-		else
-			call s:CNV_InputEncordType()
-		endif
+		call s:Redraw_floating_window('MENU_ENC_REOPEN')
 
-	elseif a:result == 7
+	elseif a:n == 7
 		"Convert to specified encording
-		let s:func = function("s:CNV_ConvertEncord")
-		if s:enable_popup
-			call s:CNV_SelectEncordType()
-		else
-			call s:CNV_InputEncordType()
-		endif
+		call s:Redraw_floating_window('MENU_ENC_CNV')
 
-	elseif a:result == 9
+	elseif a:n == 9
 		"Reopen with specified NL-code
-		let s:func = function("s:CNV_ReOpenNL")
-		if s:enable_popup
-			call s:CNV_SelectNLType()
-		else
-			call s:CNV_InputNLType()
-		endif
+		call s:Redraw_floating_window('MENU_NL_REOPEN')
 
-	elseif a:result == 10
+	elseif a:n == 10
 		"Convert to specified NL-code
-		let s:func = function("s:CNV_ConvertNL")
-		if s:enable_popup
-			call s:CNV_SelectNLType()
-		else
-			call s:CNV_InputNLType()
-		endif
+		call s:Redraw_floating_window('MENU_NL_CNV')
 
-	elseif a:result == 11
+	elseif a:n == 11
 		"Remove NL-code
+		close
 		execute '%s/\n//g'
+	endif
 
+endfunction
+
+"-------------------------------------------------------
+" s:Move_parent()
+"-------------------------------------------------------
+function! s:Move_parent()
+	echo s:menu_hierarchy
+	call remove(s:menu_hierarchy, -1)
+
+	if len(s:menu_hierarchy) == 0
+		close
+	else
+		let menu_id = remove(s:menu_hierarchy, -1)
+		call s:Redraw_floating_window(menu_id)
 	endif
 endfunction
 
-"*******************************************************
-"* Function name: CNV_Start()
-"* Function	: 
-"* Argument	: none
-"*******************************************************
-function! convert#CNV_Start(range, line1, line2) abort
+"-------------------------------------------------------
+" s:Encord_reopen()
+"-------------------------------------------------------
+function! s:Encord_reopen(n)
+	close
+	let type = a:n == 2 ? "sjis" : "utf-8"	
+	execute 'e ++enc='.type
+endfunction
+
+"-------------------------------------------------------
+" s:Encord_convert()
+"-------------------------------------------------------
+function! s:Encord_convert(n)
+	close
+	let type = a:n == 2 ? "sjis" : "utf-8"	
+	execute 'set fenc='.type
+endfunction
+
+"-------------------------------------------------------
+" s:NL_reopen()
+"-------------------------------------------------------
+function! s:NL_reopen(n)
+	close
+	if a:n == 2
+		let type = "unix"
+	elseif a:n == 3
+		let type = "dos"
+	else
+		let type = "mac"
+	endif
+	execute 'edit ++fileformat='.type
+endfunction	
+
+"-------------------------------------------------------
+" s:NL_convert()
+"-------------------------------------------------------
+function! s:NL_convert(n)
+	close
+	if a:n == 2
+		let type = "unix"
+	elseif a:n == 3
+		let type = "dos"
+	else
+		let type = "mac"
+	endif
+	execute 'set fileformat='.type
+endfunction
+
+"-------------------------------------------------------
+" s:Selected_handler()
+"-------------------------------------------------------
+function! s:Selected_handler()
+	if empty(s:exe_handler)
+		return
+	endif
+
+	let s:func = function(s:exe_handler)
+	call s:func(line("."))
+endfunction
+
+"-------------------------------------------------------
+" s:Make_menu()
+"-------------------------------------------------------
+function! s:Make_menu(menu_id)
+	let menu = []
+
+	if a:menu_id == "MENU_MAIN"
+		call add(menu, " [ Tab / Space ]")
+		call add(menu, "   Space --> Tab (Replace spaces with tabs)")
+		call add(menu, "   Tab --> Space (Replace tabs with spaces)")
+		call add(menu, "   Remove spaces and tabs at end of lines")
+		if s:range == 0
+			call add(menu, " [ Encording ]")
+			call add(menu, "   Reopen with specified encording")
+			call add(menu, "   Convert to specified encording")
+			call add(menu, " [ NL code ]")
+			call add(menu, "   Reopen with specified NL-code")
+			call add(menu, "   Convert to specified NL-code")
+			call add(menu, "   Remove NL-code")
+		endif
+		let s:exe_handler= "s:Main_menu"
+		call add(s:menu_hierarchy, a:menu_id)
+
+	elseif a:menu_id == "MENU_ENC_REOPEN"
+		call add(menu, " [ Re.open encord type ]")
+		call add(menu, "   sjis")
+		call add(menu, "   utf-8")
+		let s:exe_handler = "s:Encord_reopen"
+		call add(s:menu_hierarchy, a:menu_id)
+
+	elseif a:menu_id == "MENU_ENC_CNV"
+		call add(menu, " [ Convert encord type ]")
+		call add(menu, "   sjis")
+		call add(menu, "   utf-8")
+		let s:exe_handler = "s:Encord_convert"
+		call add(s:menu_hierarchy, a:menu_id)
+
+	elseif a:menu_id == "MENU_NL_REOPEN"
+		call add(menu, " [ Re.open NL code ]")
+		call add(menu, "   unix (LF)")
+		call add(menu, "   dos (CR+LF)")
+		call add(menu, "   mac (CR)")
+		let s:exe_handler = "s:NL_reopen"
+		call add(s:menu_hierarchy, a:menu_id)
+
+	elseif a:menu_id == "MENU_NL_CNV"
+		call add(menu, " [ Convert NL code ]")
+		call add(menu, "   unix (LF)")
+		call add(menu, "   dos (CR+LF)")
+		call add(menu, "   mac (CR)")
+		let s:exe_handler = "s:NL_convert"
+		call add(s:menu_hierarchy, a:menu_id)
+	endif
+
+	return menu
+endfunction
+
+"-------------------------------------------------------
+" s:Open_floating_window()
+"-------------------------------------------------------
+function! s:Open_floating_window(menu_id)
+	let menu = s:Make_menu(a:menu_id)
+
+	let winnum = bufwinnr('-convert-')
+	if winnum != -1
+		" Already in the window, jump to it
+		exe winnum.'wincmd w'
+		return
+	else
+		" open floating window
+		let win_id = nvim_open_win(bufnr('%'), v:true, {
+			\   'width': 50,
+			\   'height': len(menu),
+			\   'relative': 'cursor',
+			\   'anchor': "NW",
+			\   'row': 1,
+			\   'col': 0,
+			\   'external': v:false,
+			\})
+	
+		" draw to new buffer
+		enew
+		file `= '-convert-'`
+	endif
+
+	setlocal modifiable
+	call setline('.', menu)
+
+	setlocal buftype=nofile
+	setlocal bufhidden=delete
+	setlocal noswapfile
+	setlocal nowrap
+	setlocal nonumber
+
+	nnoremap <buffer> <silent> <CR> :call <SID>Selected_handler()<CR>
+	nnoremap <buffer> <silent> l :call <SID>Selected_handler()<CR>
+	nnoremap <buffer> <silent> h :call <SID>Move_parent()<CR>
+	nnoremap <buffer> <silent> q :close<CR>
+
+	highlight MyNormal guibg=#404040
+	set winhighlight=Normal:MyNormal
+
+	setlocal nomodifiable
+endfunction
+
+"-------------------------------------------------------
+" s:Redraw_floating_window()
+"-------------------------------------------------------
+function! s:Redraw_floating_window(menu_id)
+	let menu = s:Make_menu(a:menu_id)
+
+	setlocal modifiable
+	silent! %delete _
+	call setline('.', menu)
+	setlocal nomodifiable
+endfunction
+
+"-------------------------------------------------------
+" s:Start_convert()
+"-------------------------------------------------------
+function! convert#Start_convert(range, line1, line2) abort
+	echo a:range
 	if a:range
 		" get select rage
 		let s:range = 1
@@ -224,55 +273,10 @@ function! convert#CNV_Start(range, line1, line2) abort
 		let s:end = ""
 	endif
 
-	let s:enable_popup = v:version < 802 ? 0 : 1
-
-	if !s:enable_popup
-"		let s:input_cnv_type = function("CNV_input")
-		if s:range == 0
-			let shortcutkey = {'t':'2', 's':'3', 'r':'4'} 
-			let key = input("Convert type [t:SP->Tab, s:Tab->SP, r:Remove SP, e:encord, n:NL] ? ")
-			if key == "e"
-				let shortcutkey = {'r':'6', 'c':'7'} 
-				let key = input("[r:Reopen, c:Convert] ? ")
-			elseif key == "n"
-				let shortcutkey = {'r':'9', 'c':'10', 'd':'11'} 
-				let key = input("[r:Reopen, c:Convert, d:delete] ? ")
-			endif
-		else
-			let shortcutkey = {'t':'2', 's':'3', 'r':'4'} 
-			let key = input("Convert type [t:SP->Tab, s:Tab->SP, r:Remove] ? ")
-		endif
-		if has_key(shortcutkey, key)
-			call CNV_Handler(0, shortcutkey[key])
-		else
-			echo "\r"
-			echohl WarningMsg | echomsg key.": Invalid operation" | echohl None
-		endif
-	else
-"		let s:input_cnv_type = function("CNV_Select")
-		let menu = []
-		call add(menu, "[ Tab / Space ]")
-		call add(menu, "  t. Space --> Tab (Replace spaces with tabs)")
-		call add(menu, "  s. Tab --> Space (Replace tabs with spaces)")
-		call add(menu, "  r. Remove spaces and tabs at end of lines")
-		let s:menu_filter = '-tsr'
-		if s:range == 0
-			call add(menu, "[ Encording ]")
-			call add(menu, "  1. Reopen with specified encording")
-			call add(menu, "  2. Convert to specified encording")
-			call add(menu, "[ NL code ]")
-			call add(menu, "  3. Reopen with specified NL-code")
-			call add(menu, "  4. Convert to specified NL-code")
-			call add(menu, "  5. Remove NL-code")
-			let s:menu_filter .= '-12-345'
-		endif
-		let s:menu_filter .= 'q'
-		call popup_menu(menu, #{
-				\ filter: 'CNV_MenuFilter',
-				\ callback: 'CNV_Handler'
-				\ })
-	endif
+	let s:menu_hierarchy = []
+	call s:Open_floating_window('MENU_MAIN')
 endfunction
 
 let &cpoptions = s:save_cpo
 unlet s:save_cpo
+
