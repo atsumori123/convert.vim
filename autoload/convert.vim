@@ -68,14 +68,22 @@ endfunction
 
 function! s:CNV_SelectEncordType() abort
 	let menu = []
-	call add(menu, "s: sjis")
-	call add(menu, "u: utf-8")
+	call add(menu, " s: sjis")
+	call add(menu, " u: utf-8")
 	let s:menu_filter = 'suq'
 
-	call popup_menu(menu, #{
-			\ filter: 'CNV_MenuFilter',
-			\ callback: 'CNV_EncordHandler'
+	const winid = popup_create(menu, {
+			\ 'border': [1,1,1,1],
+			\ 'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
+			\ 'cursorline': 1,
+			\ 'wrap': v:false,
+			\ 'mapping': v:false,
+			\ 'title': ' Encord type ',
+			\ 'callback': "CNV_EncordHandler",
+			\ 'filter': 'CNV_MenuFilter',
+			\ 'filtermode': 'n'
 			\ })
+	call popup_filter_menu(winid,'k')
 endfunction
 
 function! s:CNV_InputEncordType() abort
@@ -102,15 +110,23 @@ endfunction
 
 function! s:CNV_SelectNLType() abort
 	let menu = []
-	call add(menu, "u: unix (LF)")
-	call add(menu, "d: dos (CR+LF)")
-	call add(menu, "m: mac (CR)")
+	call add(menu, " u: unix (LF)")
+	call add(menu, " d: dos (CR+LF)")
+	call add(menu, " m: mac (CR)")
 	let s:menu_filter = 'udmq'
 
-	call popup_menu(menu, #{
-			\ filter: 'CNV_MenuFilter',
-			\ callback: 'CNV_NLHandler'
+	const winid = popup_create(menu, {
+			\ 'border': [1,1,1,1],
+			\ 'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
+			\ 'cursorline': 1,
+			\ 'wrap': v:false,
+			\ 'mapping': v:false,
+			\ 'title': ' NL code ',
+			\ 'callback': "CNV_NLHandler",
+			\ 'filter': 'CNV_MenuFilter',
+			\ 'filtermode': 'n'
 			\ })
+	call popup_filter_menu(winid,'k')
 endfunction
 
 function! s:CNV_InputNLType() abort
@@ -153,7 +169,7 @@ function! CNV_Handler(winid, result)
 			execute ':retab'
 		endif
 		execute ':set '.et
-		
+
 	elseif a:result == 4
 		"Remove spaces and tabs at end of lines
 		let pos = getpos(".")
@@ -209,7 +225,7 @@ endfunction
 
 "*******************************************************
 "* Function name: CNV_Start()
-"* Function	: 
+"* Function	:
 "* Argument	: none
 "*******************************************************
 function! convert#CNV_Start(range, line1, line2) abort
@@ -229,17 +245,17 @@ function! convert#CNV_Start(range, line1, line2) abort
 	if !s:enable_popup
 "		let s:input_cnv_type = function("CNV_input")
 		if s:range == 0
-			let shortcutkey = {'t':'2', 's':'3', 'r':'4'} 
+			let shortcutkey = {'t':'2', 's':'3', 'r':'4'}
 			let key = input("Convert type [t:SP->Tab, s:Tab->SP, r:Remove SP, e:encord, n:NL] ? ")
 			if key == "e"
-				let shortcutkey = {'r':'6', 'c':'7'} 
+				let shortcutkey = {'r':'6', 'c':'7'}
 				let key = input("[r:Reopen, c:Convert] ? ")
 			elseif key == "n"
-				let shortcutkey = {'r':'9', 'c':'10', 'd':'11'} 
+				let shortcutkey = {'r':'9', 'c':'10', 'd':'11'}
 				let key = input("[r:Reopen, c:Convert, d:delete] ? ")
 			endif
 		else
-			let shortcutkey = {'t':'2', 's':'3', 'r':'4'} 
+			let shortcutkey = {'t':'2', 's':'3', 'r':'4'}
 			let key = input("Convert type [t:SP->Tab, s:Tab->SP, r:Remove] ? ")
 		endif
 		if has_key(shortcutkey, key)
@@ -251,26 +267,34 @@ function! convert#CNV_Start(range, line1, line2) abort
 	else
 "		let s:input_cnv_type = function("CNV_Select")
 		let menu = []
-		call add(menu, "[ Tab / Space ]")
-		call add(menu, "  t. Space --> Tab (Replace spaces with tabs)")
-		call add(menu, "  s. Tab --> Space (Replace tabs with spaces)")
-		call add(menu, "  r. Remove spaces and tabs at end of lines")
+		call add(menu, " [ Tab / Space ]")
+		call add(menu, "   t. Space --> Tab (Replace spaces with tabs)")
+		call add(menu, "   s. Tab --> Space (Replace tabs with spaces)")
+		call add(menu, "   r. Remove spaces and tabs at end of lines")
 		let s:menu_filter = '-tsr'
 		if s:range == 0
-			call add(menu, "[ Encording ]")
-			call add(menu, "  1. Reopen with specified encording")
-			call add(menu, "  2. Convert to specified encording")
-			call add(menu, "[ NL code ]")
-			call add(menu, "  3. Reopen with specified NL-code")
-			call add(menu, "  4. Convert to specified NL-code")
-			call add(menu, "  5. Remove NL-code")
+			call add(menu, " [ Encording ]")
+			call add(menu, "   1. Reopen with specified encording")
+			call add(menu, "   2. Convert to specified encording")
+			call add(menu, " [ NL code ]")
+			call add(menu, "   3. Reopen with specified NL-code")
+			call add(menu, "   4. Convert to specified NL-code")
+			call add(menu, "   5. Remove NL-code")
 			let s:menu_filter .= '-12-345'
 		endif
 		let s:menu_filter .= 'q'
-		call popup_menu(menu, #{
-				\ filter: 'CNV_MenuFilter',
-				\ callback: 'CNV_Handler'
+		const winid = popup_create(menu, {
+				\ 'border': [1,1,1,1],
+				\ 'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
+				\ 'cursorline': 1,
+				\ 'wrap': v:false,
+				\ 'mapping': v:false,
+				\ 'title': ' Convert ',
+				\ 'callback': "CNV_Handler",
+				\ 'filter': 'CNV_MenuFilter',
+				\ 'filtermode': 'n'
 				\ })
+		call popup_filter_menu(winid,'k')
 	endif
 endfunction
 
